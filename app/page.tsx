@@ -36,31 +36,40 @@ export default function Home() {
   }, []);
 
   const initialiseWebsocket = useCallback(() => {
-    const ws = new WebSocket("ws://localhost:8000/ws");
-    ws.onopen = () => {
-      setConnected(true);
-      console.log("Connected to WebSocket");
-      ws.send("Hello, websocket!");
-    };
+    if (!wsRef.current || wsRef.current.readyState > 1) {
+      const ws = new WebSocket("ws://localhost:8000/ws");
+      ws.onopen = () => {
+        setConnected(true);
 
-    ws.onclose = () => {
-      setConnected(false);
-    };
+        ws.send("Hello, websocket!");
+      };
 
-    ws.onerror = () => {
-      setConnected(false);
-    };
+      ws.onclose = () => {
+        setConnected(false);
+      };
 
-    ws.onmessage = onMessage;
+      ws.onerror = () => {
+        setConnected(false);
+      };
 
-    wsRef.current = ws;
+      ws.onmessage = onMessage;
+
+      wsRef.current = ws;
+    } else {
+      if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send("ping");
+      }
+    }
   }, []);
 
   useEffect(() => {
     initialiseWebsocket();
 
+    const pingInterval = setInterval(initialiseWebsocket, 10000);
+
     return () => {
       if (wsRef.current) wsRef.current.close();
+      clearInterval(pingInterval);
     };
   }, []);
 
