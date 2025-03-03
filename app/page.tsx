@@ -1,7 +1,7 @@
 "use client";
 
-import { Avatar } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar } from "@/components/ui/avatar";
 import {
   Card,
   CardContent,
@@ -9,74 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useWebhook } from "@/hooks/useWebhook";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-interface Session {
-  circuit_short_name: string;
-  date_start: string;
-  location: string;
-  session_name: string;
-  session_type: string;
-}
-
-interface Response {
-  drivers: Driver[];
-  session: Session;
-}
-
-interface Driver {
-  driver_number: number;
-  full_name: string;
-  name_acronym: string;
-  team_colour: string;
-  team_name: string;
-}
 
 export default function Home() {
-  const [data, setData] = useState<Response | null>(null);
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  const onMessage = useCallback((event: MessageEvent) => {
-    const parsedData = JSON.parse(event.data);
-
-    if (parsedData) {
-      setData(parsedData);
-    }
-  }, []);
-
-  const initialiseWebsocket = useCallback(() => {
-    if (!wsRef.current || wsRef.current.readyState > 1) {
-      const ws = new WebSocket("ws://localhost:8000/ws");
-      ws.onopen = () => {
-        setConnected(true);
-      };
-
-      ws.onclose = () => {
-        setConnected(false);
-      };
-
-      ws.onerror = () => {
-        setConnected(false);
-      };
-
-      ws.onmessage = onMessage;
-
-      wsRef.current = ws;
-    }
-  }, []);
-
-  useEffect(() => {
-    initialiseWebsocket();
-
-    const pingInterval = setInterval(initialiseWebsocket, 5000);
-
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-      clearInterval(pingInterval);
-    };
-  }, []);
+  const { data, connected } = useWebhook();
 
   return (
     <div className="container mx-auto py-8">
