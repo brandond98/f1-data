@@ -1,28 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { WebsocketResponse } from "@/types/webhook";
 
-interface Session {
-  circuit_short_name: string;
-  date_start: string;
-  location: string;
-  session_name: string;
-  session_type: string;
-}
-
-interface Response {
-  drivers: Driver[];
-  session: Session;
-}
-
-interface Driver {
-  driver_number: number;
-  full_name: string;
-  name_acronym: string;
-  team_colour: string;
-  team_name: string;
-}
-
-export const useWebhook = () => {
-  const [data, setData] = useState<Response | null>(null);
+export const useWebSocket = () => {
+  const [data, setData] = useState<WebsocketResponse | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 

@@ -9,11 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useWebhook } from "@/hooks/useWebhook";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
-  const { data, connected } = useWebhook();
+  const { data, connected } = useWebSocket();
 
   return (
     <div className="container mx-auto py-8">
