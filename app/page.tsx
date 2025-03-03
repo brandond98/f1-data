@@ -1,7 +1,7 @@
 "use client";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -13,54 +13,37 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Session {
-  circuit_key: number;
   circuit_short_name: string;
-  country_code: string;
-  country_key: number;
-  country_name: string;
-  date_end: string;
   date_start: string;
-  gmt_offset: string;
   location: string;
-  meeting_key: number;
-  session_key: number;
   session_name: string;
   session_type: string;
-  year: number;
 }
 
 interface Response {
-  carData: Driver[];
-  sessionData: Session;
+  drivers: Driver[];
+  session: Session;
 }
 
 interface Driver {
-  broadcast_name: string;
-  country_code: string;
   driver_number: number;
-  first_name: string;
   full_name: string;
-  headshot_url: string;
-  last_name: string;
-  meeting_key: number;
   name_acronym: string;
-  session_key: number;
   team_colour: string;
   team_name: string;
 }
 
 export default function Home() {
-  const [data, setData] = useState<Response>({});
+  const [data, setData] = useState<Response | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   const onMessage = useCallback((event: MessageEvent) => {
     const parsedData = JSON.parse(event.data);
 
-    if (parsedData === "pong") {
-      return;
+    if (parsedData) {
+      setData(parsedData);
     }
-    setData(parsedData);
   }, []);
 
   const initialiseWebsocket = useCallback(() => {
@@ -81,10 +64,6 @@ export default function Home() {
       ws.onmessage = onMessage;
 
       wsRef.current = ws;
-    } else {
-      if (wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send("ping");
-      }
     }
   }, []);
 
@@ -125,32 +104,32 @@ export default function Home() {
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Track</p>
                 <p className="text-sm text-muted-foreground">
-                  {data.sessionData?.circuit_short_name || "Unknown"}
+                  {data?.session?.circuit_short_name || "Unknown"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Location</p>
                 <p className="text-sm text-muted-foreground">
-                  {data.sessionData?.location || "Unknown"}
+                  {data?.session?.location || "Unknown"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Session Type</p>
                 <p className="text-sm text-muted-foreground">
-                  {data.sessionData?.session_type || "Unknown"}
+                  {data?.session?.session_type || "Unknown"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Session Name</p>
                 <p className="text-sm text-muted-foreground">
-                  {data.sessionData?.session_name || "Unknown"}
+                  {data?.session?.session_name || "Unknown"}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Date</p>
                 <p className="text-sm text-muted-foreground">
-                  {data.sessionData?.date_start
-                    ? new Date(data.sessionData.date_start).toLocaleDateString()
+                  {data?.session?.date_start
+                    ? new Date(data?.session.date_start).toLocaleDateString()
                     : "Unknown"}
                 </p>
               </div>
@@ -159,7 +138,7 @@ export default function Home() {
         </Card>
 
         <div className="grid gap-4">
-          {data.carData?.map((driver) => (
+          {data?.drivers?.map((driver) => (
             <Card key={driver.driver_number} className="overflow-hidden py-1">
               <CardContent className="p-0">
                 <div className="flex items-center p-4">
