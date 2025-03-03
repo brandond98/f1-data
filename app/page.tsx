@@ -1,11 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar } from "@/components/ui/avatar";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar } from "@/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+interface Session {
+  circuit_key: number;
+  circuit_short_name: string;
+  country_code: string;
+  country_key: number;
+  country_name: string;
+  date_end: string;
+  date_start: string;
+  gmt_offset: string;
+  location: string;
+  meeting_key: number;
+  session_key: number;
+  session_name: string;
+  session_type: string;
+  year: number;
+}
+
+interface Response {
+  carData: Driver[];
+  sessionData: Session;
+}
 
 interface Driver {
   broadcast_name: string;
@@ -23,16 +50,17 @@ interface Driver {
 }
 
 export default function Home() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [data, setData] = useState<Response>({});
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   const onMessage = useCallback((event: MessageEvent) => {
     const parsedData = JSON.parse(event.data);
+
     if (parsedData === "pong") {
-      console.log("Pong recieved");
+      return;
     }
-    setDrivers(parsedData);
+    setData(parsedData);
   }, []);
 
   const initialiseWebsocket = useCallback(() => {
@@ -40,8 +68,6 @@ export default function Home() {
       const ws = new WebSocket("ws://localhost:8000/ws");
       ws.onopen = () => {
         setConnected(true);
-
-        ws.send("Hello, websocket!");
       };
 
       ws.onclose = () => {
@@ -65,7 +91,7 @@ export default function Home() {
   useEffect(() => {
     initialiseWebsocket();
 
-    const pingInterval = setInterval(initialiseWebsocket, 10000);
+    const pingInterval = setInterval(initialiseWebsocket, 5000);
 
     return () => {
       if (wsRef.current) wsRef.current.close();
@@ -84,13 +110,57 @@ export default function Home() {
           )}
           <AlertTitle>Status</AlertTitle>
           <AlertDescription>
-            {connected ? "Connected to live data" : "Disconnected from server"}
+            {connected
+              ? "Connected to live data"
+              : "Disconnected: Attempting to reconnect..."}
           </AlertDescription>
         </Alert>
+        <Card>
+          <CardHeader>
+            <CardTitle>Session Details</CardTitle>
+            <CardDescription>Current session information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Track</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.sessionData?.circuit_short_name || "Unknown"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Location</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.sessionData?.location || "Unknown"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Session Type</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.sessionData?.session_type || "Unknown"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Session Name</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.sessionData?.session_name || "Unknown"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Date</p>
+                <p className="text-sm text-muted-foreground">
+                  {data.sessionData?.date_start
+                    ? new Date(data.sessionData.date_start).toLocaleDateString()
+                    : "Unknown"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4">
-          {drivers.map((driver) => (
-            <Card key={driver.driver_number} className="overflow-hidden">
+          {data.carData?.map((driver) => (
+            <Card key={driver.driver_number} className="overflow-hidden py-1">
               <CardContent className="p-0">
                 <div className="flex items-center p-4">
                   <div
@@ -110,9 +180,6 @@ export default function Home() {
                         {driver.team_name}
                       </div>
                     </div>
-                    <Badge variant="outline" className="ml-auto">
-                      {driver.driver_number}
-                    </Badge>
                   </div>
                 </div>
               </CardContent>
